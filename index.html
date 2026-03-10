@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Field Work Tracker</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5; 
+            color: #333;
+            line-height: 1.6;
+        }
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 { color: #2c3e50; margin-bottom: 10px; font-size: 1.5rem; }
+        h2 { color: #34495e; margin-bottom: 15px; font-size: 1.2rem; }
+        .form-group { margin-bottom: 15px; }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+            font-size: 0.9rem;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        textarea { resize: vertical; min-height: 80px; }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:hover { background: #2980b9; }
+        button:disabled { background: #95a5a6; cursor: not-allowed; }
+        .btn-secondary { background: #7f8c8d; margin-top: 10px; }
+        .btn-success { background: #27ae60; }
+        .btn-danger { background: #e74c3c; }
+        .btn-small { padding: 8px 16px; font-size: 14px; width: auto; }
+        
+        .gps-status {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+        }
+        .gps-pending { background: #fff3cd; color: #856404; }
+        .gps-success { background: #d4edda; color: #155724; }
+        .gps-error { background: #f8d7da; color: #721c24; }
+        
+        .hidden { display: none !important; }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+            overflow-x: auto;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 6px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        .tab.active { background: #3498db; color: white; }
+        
+        .entry-card {
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+            border-radius: 0 8px 8px 0;
+        }
+        .entry-pending { border-left-color: #f39c12; }
+        .entry-approved { border-left-color: #27ae60; }
+        .entry-rejected { border-left-color: #e74c3c; }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-pending { background: #fff3cd; color: #856404; }
+        .badge-approved { background: #d4edda; color: #155724; }
+        .badge-rejected { background: #f8d7da; color: #721c24; }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .stat-value { font-size: 2rem; font-weight: bold; }
+        
+        .login-screen {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 90%;
+            max-width: 400px;
+        }
+        
+        .filter-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        iframe {
+            width: 100%;
+            height: 600px;
+            border: none;
+            border-radius: 8px;
+        }
+        
+        @media (max-width: 600px) {
+            .container { padding: 10px; }
+            iframe { height: 500px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-box">
+            <h1 style="text-align: center; margin-bottom: 10px;">🔧 Field Work Tracker</h1>
+            <p style="text-align: center; color: #666; margin-bottom: 30px;">Daily Work Summary System</p>
+            
+            <div class="form-group">
+                <label>Select Your Name</label>
+                <select id="userSelect">
+                    <option value="">-- Choose --</option>
+                    <option value="John Smith">John Smith</option>
+                    <option value="Sarah Johnson">Sarah Johnson</option>
+                    <option value="Mike Davis">Mike Davis</option>
+                    <option value="Emily Brown">Emily Brown</option>
+                    <option value="Chris Wilson">Chris Wilson</option>
+                    <option value="ADMIN">🔐 Manager (Admin)</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>PIN Code</label>
+                <input type="password" id="pinInput" placeholder="Enter your PIN" maxlength="4">
+                <small style="color: #666; font-size: 0.8rem;">Default PIN: 1234 (Admin: 9999)</small>
+            </div>
+            
+            <button onclick="login()">Sign In</button>
+            <p id="loginError" style="color: #e74c3c; text-align: center; margin-top: 15px; display: none;">Invalid PIN</p>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="mainApp" class="hidden">
+        <div class="container">
+            <!-- Header -->
+            <div class="card" style="background: #2c3e50; color: white;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h1 style="color: white; margin: 0;">🔧 Field Work Tracker</h1>
+                        <p style="opacity: 0.8; margin-top: 5px;">Welcome, <span id="currentUser"></span></p>
+                    </div>
+                    <button onclick="logout()" class="btn-secondary" style="width: auto;">Logout</button>
+                </div>
+            </div>
+
+            <!-- Employee View -->
+            <div id="employeeView">
+                <div class="tabs">
+                    <div class="tab active" onclick="showTab('submit')">📝 Submit Entry</div>
+                    <div class="tab" onclick="showTab('history')">📋 My History</div>
+                    <div class="tab" onclick="showTab('summary')">📊 My Summary</div>
+                </div>
+
+                <!-- Submit Entry Tab -->
+                <div id="submitTab" class="tab-content">
+                    <div class="card">
+                        <h2>Submit Daily Work Entry</h2>
+                        
+                        <div id="gpsStatus" class="gps-status gps-pending">
+                            📍 Click "Capture Location" to verify your position
+                        </div>
+                        
+                        <button onclick="captureGPS()" class="btn-secondary" style="margin-bottom: 15px;">
+                            📍 Capture GPS Location
+                        </button>
+                        
+                        <div id="gpsDetails" class="hidden" style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                            <!-- GPS info appears here -->
+                        </div>
+
+                        <div id="formContainer">
+                            <p style="color: #666; margin-bottom: 15px;">
+                                Complete the form below. Your GPS location will be automatically attached.
+                            </p>
+                            <!-- Google Form will be embedded here -->
+                            <div id="formFrame"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- History Tab -->
+                <div id="historyTab" class="tab-content hidden">
+                    <div class="card">
+                        <h2>My Submitted Entries</h2>
+                        <div style="margin-bottom: 15px;">
+                            <button onclick="loadFromSheet()" class="btn-secondary btn-small">🔄 Refresh Data</button>
+                        </div>
+                        <div id="myEntriesList">
+                            <p style="color: #666;">Click "Refresh Data" to load your entries</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Summary Tab -->
+                <div id="summaryTab" class="tab-content hidden">
+                    <div class="card">
+                        <h2>Monthly Summary</h2>
+                        <div class="form-group">
+                            <label>Select Month</label>
+                            <input type="month" id="summaryMonth" onchange="loadMySummary()">
+                        </div>
+                        <div id="mySummaryStats" class="stats-grid"></div>
+                        <div id="mySummaryDetails"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin View -->
+            <div id="adminView" class="hidden">
+                <div class="tabs">
+                    <div class="tab active" onclick="showAdminTab('pending')">⏳ Pending Approvals</div>
+                    <div class="tab" onclick="showAdminTab('all')">📋 All Entries</div>
+                    <div class="tab" onclick="showAdminTab('reports')">📊 Monthly Reports</div>
+                </div>
+
+                <!-- Pending Approvals -->
+                <div id="pendingTab" class="admin-tab-content">
+                    <div class="card">
+                        <h2>Pending Approvals</h2>
+                        <div style="margin-bottom: 15px;">
+                            <button onclick="loadFromSheet()" class="btn-secondary btn-small">🔄 Refresh Data</button>
+                            <a id="sheetLink" href="#" target="_blank" class="btn-secondary btn-small" style="text-decoration: none; display: inline-block; margin-left: 10px;">📊 Open Google Sheet</a>
+                        </div>
+                        <div id="pendingList">
+                            <p style="color: #666;">Click "Refresh Data" to load pending entries</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- All Entries -->
+                <div id="allTab" class="admin-tab-content hidden">
+                    <div class="card">
+                        <h2>All Entries</h2>
+                        <div class="filter-bar">
+                            <select id="filterEmployee" onchange="filterEntries()">
+                                <option value="">All Employees</option>
+                            </select>
+                            <select id="filterStatus" onchange="filterEntries()">
+                                <option value="">All Status</option>
+                                <option value="pending">Pending</option>
+                                <option value="approved">Approved</option>
+                                <option value="rejected">Rejected</option>
+                            </select>
+                            <input type="month" id="filterMonth" onchange="filterEntries()">
+                        </div>
+                        <div id="allEntriesList">
+                            <p style="color: #666;">Click "Refresh Data" in Pending tab first</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Monthly Reports -->
+                <div id="reportsTab" class="admin-tab-content hidden">
+                    <div class="card">
+                        <h2>Generate Monthly Report</h2>
+                        <div class="form-group">
+                            <label>Select Employee</label>
+                            <select id="reportEmployee">
+                                <option value="">-- Choose Employee --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Select Month</label>
+                            <input type="month" id="reportMonth">
+                        </div>
+                        <button onclick="generateReport()">Generate Report</button>
+                        <div id="reportResult" style="margin-top: 20px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // CONFIGURATION - UPDATE THESE VALUES
+        // ==========================================
+        const CONFIG = {
+            // Your Google Form ID (from URL: docs.google.com/forms/d/FORM_ID/viewform)
+            FORM_ID: '1Ccr3jKmab8j6eQVXtRMyE8zx1JG7N4V_nz8Kjnumcxc',
+            
+            // Your Google Sheet ID (from URL: docs.google.com/spreadsheets/d/SHEET_ID/edit)
+            SHEET_ID: '1YPclbxhoyAudzzDWkmePvT5TdbUI7LNhv1eEnrb74gg',
+            
+            // Sheet name where form responses go
+            SHEET_NAME: 'Form Responses 1',
+            
+            DEFAULT_PINS: {
+                'John Smith': '1234',
+                'Sarah Johnson': '1234',
+                'Mike Davis': '1234',
+                'Emily Brown': '1234',
+                'Chris Wilson': '1234',
+                'ADMIN': '9999'
+            }
+        };
+
+        let currentUser = null;
+        let currentGPS = null;
+        let allEntries = [];
+
+        // ==========================================
+        // AUTHENTICATION
+        // ==========================================
+        function login() {
+            const user = document.getElementById('userSelect').value;
+            const pin = document.getElementById('pinInput').value;
+            
+            if (!user) {
+                alert('Please select your name');
+                return;
+            }
+            
+            if (CONFIG.DEFAULT_PINS[user] === pin) {
+                currentUser = user;
+                document.getElementById('currentUser').textContent = user;
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                
+                // Set default month values
+                const today = new Date().toISOString().slice(0, 7);
+                document.getElementById('summaryMonth').value = today;
+                document.getElementById('reportMonth').value = today;
+                
+                if (user === 'ADMIN') {
+                    document.getElementById('employeeView').classList.add('hidden');
+                    document.getElementById('adminView').classList.remove('hidden');
+                    document.getElementById('sheetLink').href = `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/edit`;
+                    populateEmployeeFilters();
+                } else {
+                    document.getElementById('employeeView').classList.remove('hidden');
+                    document.getElementById('adminView').classList.add('hidden');
+                    loadGoogleForm();
+                }
+            } else {
+                document.getElementById('loginError').style.display = 'block';
+            }
+        }
+
+        function logout() {
+            location.reload();
+        }
+
+        // ==========================================
+        // NAVIGATION
+        // ==========================================
+        function showTab(tab) {
+            document.querySelectorAll('#employeeView .tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+            event.target.classList.add('active');
+            document.getElementById(tab + 'Tab').classList.remove('hidden');
+        }
+
+        function showAdminTab(tab) {
+            document.querySelectorAll('#adminView .tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.admin-tab-content').forEach(t => t.classList.add('hidden'));
+            event.target.classList.add('active');
+            document.getElementById(tab + 'Tab').classList.remove('hidden');
+        }
+
+        // ==========================================
+        // GPS CAPTURE
+        // ==========================================
+        function captureGPS() {
+            const statusEl = document.getElementById('gpsStatus');
+            statusEl.className = 'gps-status gps-pending';
+            statusEl.textContent = '⏳ Acquiring GPS signal...';
+            
+            if (!navigator.geolocation) {
+                statusEl.className = 'gps-status gps-error';
+                statusEl.textContent = '❌ GPS not supported on this device';
+                return;
+            }
+            
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    currentGPS = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude,
+                        accuracy: position.coords.accuracy
+                    };
+                    
+                    statusEl.className = 'gps-status gps-success';
+                    statusEl.textContent = `✅ Location captured (±${Math.round(currentGPS.accuracy)}m accuracy)`;
+                    
+                    document.getElementById('gpsDetails').innerHTML = `
+                        <strong>📍 GPS Coordinates Captured</strong><br>
+                        Latitude: ${currentGPS.lat.toFixed(6)}<br>
+                        Longitude: ${currentGPS.lng.toFixed(6)}<br>
+                        Accuracy: ±${Math.round(currentGPS.accuracy)} meters<br>
+                        <a href="https://www.google.com/maps?q=${currentGPS.lat},${currentGPS.lng}" target="_blank" style="color: #1976d2;">View on Map ↗</a>
+                    `;
+                    document.getElementById('gpsDetails').classList.remove('hidden');
+                    
+                    // Reload form with pre-filled values
+                    loadGoogleForm();
+                },
+                (error) => {
+                    statusEl.className = 'gps-status gps-error';
+                    let msg = 'Unable to get location';
+                    if (error.code === 1) msg = 'Location permission denied';
+                    if (error.code === 2) msg = 'Location unavailable';
+                    if (error.code === 3) msg = 'Location request timeout';
+                    statusEl.textContent = `❌ ${msg}`;
+                },
+                { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+            );
+        }
+
+        // ==========================================
+        // GOOGLE FORM INTEGRATION
+        // ==========================================
+        function loadGoogleForm() {
+            const container = document.getElementById('formFrame');
+            
+            if (!currentGPS) {
+                container.innerHTML = '<p style="color: #666; padding: 20px;">Please capture your GPS location first</p>';
+                return;
+            }
+            
+            // Build pre-filled form URL
+            // Google Forms pre-fill format: entry.FIELD_ID=VALUE
+            const baseUrl = `https://docs.google.com/forms/d/e/${1YPclbxhoyAudzzDWkmePvT5TdbUI7LNhv1eEnrb74gg}/viewform`;
+            
+            // Create iframe with form
+            // Note: We can't truly pre-fill without knowing entry IDs, so we show instructions
+            container.innerHTML = `
+                <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #f39c12;">
+                    <strong>⚠️ Important:</strong> Please enter these exact values in the form:
+                    <ul style="margin: 10px 0; padding-left: 20px;">
+                        <li><strong>Employee Name:</strong> ${currentUser}</li>
+                        <li><strong>GPS Latitude:</strong> ${currentGPS.lat.toFixed(6)}</li>
+                        <li><strong>GPS Longitude:</strong> ${currentGPS.lng.toFixed(6)}</li>
+                        <li><strong>GPS Accuracy:</strong> ${Math.round(currentGPS.accuracy)}</li>
+                    </ul>
+                </div>
+                <iframe src="${baseUrl}?embedded=true" style="width: 100%; height: 600px; border: none;" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
+            `;
+        }
+
+        // ==========================================
+        // DATA LOADING FROM GOOGLE SHEETS
+        // ==========================================
+        async function loadFromSheet() {
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = '⏳ Loading...';
+            btn.disabled = true;
+            
+            try {
+                // Use Google Sheets CSV export (no authentication required for public sheets)
+                const csvUrl = `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(CONFIG.SHEET_NAME)}`;
+                
+                const response = await fetch(csvUrl);
+                const csvText = await response.text();
+                allEntries = parseCSV(csvText);
+                
+                // Add approval status from additional columns if present
+                allEntries = allEntries.map((entry, index) => ({
+                    ...entry,
+                    rowIndex: index + 2, // +2 because header is row 1, and array is 0-indexed
+                    status: entry.status || 'pending',
+                    approvedBy: entry.approvedBy || '',
+                    approvedAt: entry.approvedAt || '',
+                    rejectionReason: entry.rejectionReason || ''
+                }));
+                
+                if (currentUser === 'ADMIN') {
+                    loadPendingApprovals();
+                } else {
+                    loadMyEntries();
+                }
+                
+                alert(`Loaded ${allEntries.length} entries successfully!`);
+                
+            } catch (error) {
+                console.error('Error loading data:', error);
+                alert('Error loading data. Make sure your Google Sheet is published to web (File → Share → Publish to web).');
+            } finally {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function parseCSV(csvText) {
+            const lines = csvText.split('\n');
+            const headers = parseCSVLine(lines[0]);
+            const entries = [];
+            
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i].trim()) continue;
+                const values = parseCSVLine(lines[i]);
+                const entry = {};
+                headers.forEach((header, index) => {
+                    entry[header] = values[index] || '';
+                });
+                entries.push(entry);
+            }
+            
+            return entries;
+        }
+
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                const nextChar = line[i + 1];
+                
+                if (char === '"') {
+                    if (inQuotes && nextChar === '"') {
+                        current += '"';
+                        i++; // Skip next quote
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current.trim());
+            return result;
+        }
+
+        // ==========================================
+        // EMPLOYEE FUNCTIONS
+        // ==========================================
+        function loadMyEntries() {
+            const myEntries = allEntries
+                .filter(e => e['Employee Name'] === currentUser)
+                .sort((a, b) => new Date(b['Work Date'] || b['Timestamp']) - new Date(a['Work Date'] || a['Timestamp']));
+            
+            const container = document.getElementById('myEntriesList');
+            if (myEntries.length === 0) {
+                container.innerHTML = '<p style="color: #666; text-align: center;">No entries found. Submit your first entry using the form above.</p>';
+                return;
+            }
+            
+            container.innerHTML = myEntries.map(entry => `
+                <div class="entry-card entry-${(entry.status || 'pending').toLowerCase()}">
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div>
+                            <strong>${formatDate(entry['Work Date'] || entry['Timestamp'])}</strong> - ${entry['Location Name'] || entry['Location']}<br>
+                            <small>${entry['Hours Worked'] || entry['Hours']} hours | ${(entry['Tasks Completed'] || entry['Tasks'] || '').substring(0, 50)}...</small>
+                        </div>
+                        <span class="badge badge-${(entry.status || 'pending').toLowerCase()}">${entry.status || 'PENDING'}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function loadMySummary() {
+            const month = document.getElementById('summaryMonth').value;
+            if (!month) return;
+            
+            const myEntries = allEntries.filter(e => {
+                const entryDate = e['Work Date'] || e['Timestamp'] || '';
+                return e['Employee Name'] === currentUser && 
+                       entryDate.startsWith(month) &&
+                       (e.status || 'pending').toLowerCase() === 'approved';
+            });
+            
+            const totalHours = myEntries.reduce((sum, e) => sum + parseFloat(e['Hours Worked'] || e['Hours'] || 0), 0);
+            const totalDays = myEntries.length;
+            const avgHours = totalDays > 0 ? (totalHours / totalDays).toFixed(1) : 0;
+            
+            document.getElementById('mySummaryStats').innerHTML = `
+                <div class="stat-box"><div class="stat-value">${totalDays}</div><div class="stat-label">Days Worked</div></div>
+                <div class="stat-box"><div class="stat-value">${totalHours.toFixed(1)}</div><div class="stat-label">Total Hours</div></div>
+                <div class="stat-box"><div class="stat-value">${avgHours}</div><div class="stat-label">Avg Hours/Day</div></div>
+            `;
+            
+            document.getElementById('mySummaryDetails').innerHTML = myEntries.map(entry => `
+                <div class="entry-card entry-approved" style="margin-bottom: 10px;">
+                    <strong>${formatDate(entry['Work Date'] || entry['Timestamp'])}</strong> - ${entry['Location Name'] || entry['Location']}<br>
+                    ${entry['Hours Worked'] || entry['Hours']} hours<br>
+                    <small>${entry['Tasks Completed'] || entry['Tasks']}</small>
+                </div>
+            `).join('') || '<p style="color: #666;">No approved entries for this month</p>';
+        }
+
+        // ==========================================
+        // ADMIN FUNCTIONS
+        // ==========================================
+        function populateEmployeeFilters() {
+            const employees = Object.keys(CONFIG.DEFAULT_PINS).filter(k => k !== 'ADMIN');
+            const options = employees.map(e => `<option value="${e}">${e}</option>`).join('');
+            document.getElementById('filterEmployee').innerHTML = '<option value="">All Employees</option>' + options;
+            document.getElementById('reportEmployee').innerHTML = '<option value="">-- Choose Employee --</option>' + options;
+        }
+
+        function loadPendingApprovals() {
+            const pending = allEntries.filter(e => (e.status || 'pending').toLowerCase() === 'pending');
+            document.getElementById('pendingList').innerHTML = pending.length === 0 ? 
+                '<p style="color: #666;">No pending entries</p>' :
+                pending.map(entry => `
+                    <div class="card entry-pending" style="border-left: 4px solid #f39c12; margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                            <div>
+                                <strong style="font-size: 1.1rem;">${entry['Employee Name'] || entry['Employee']}</strong><br>
+                                <small>${formatDate(entry['Work Date'] || entry['Timestamp'])} | ${entry['Location Name'] || entry['Location']}</small>
+                            </div>
+                            <span class="badge badge-pending">PENDING</span>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; margin-bottom: 12px;">
+                            <strong>${entry['Hours Worked'] || entry['Hours']} hours</strong><br>
+                            ${entry['Tasks Completed'] || entry['Tasks'] || ''}
+                        </div>
+                        <div style="background: #e3f2fd; padding: 12px; border-radius: 6px; margin-bottom: 15px; font-size: 0.9rem;">
+                            <strong>📍 GPS Data:</strong> ${entry['GPS Latitude'] || entry['GPS_Lat']}, ${entry['GPS Longitude'] || entry['GPS_Lng']}<br>
+                            <a href="https://www.google.com/maps?q=${entry['GPS Latitude'] || entry['GPS_Lat']},${entry['GPS Longitude'] || entry['GPS_Lng']}" target="_blank" style="color: #1976d2;">View on Map ↗</a>
+                        </div>
+                        <p style="color: #666; font-size: 0.9rem;">
+                            <strong>To approve/reject:</strong> Open the Google Sheet and update the Status column
+                        </p>
+                    </div>
+                `).join('');
+        }
+
+        function filterEntries() {
+            const employee = document.getElementById('filterEmployee').value;
+            const status = document.getElementById('filterStatus').value;
+            const month = document.getElementById('filterMonth').value;
+            
+            let filtered = [...allEntries];
+            if (employee) filtered = filtered.filter(e => e['Employee Name'] === employee);
+            if (status) filtered = filtered.filter(e => (e.status || 'pending').toLowerCase() === status);
+            if (month) filtered = filtered.filter(e => (e['Work Date'] || e['Timestamp'] || '').startsWith(month));
+            
+            const container = document.getElementById('allEntriesList');
+            container.innerHTML = filtered.length === 0 ? 
+                '<p style="color: #666;">No entries found</p>' :
+                filtered.map(entry => `
+                    <div class="entry-card entry-${(entry.status || 'pending').toLowerCase()}">
+                        <div style="display: flex; justify-content: space-between;">
+                            <div>
+                                <strong>${entry['Employee Name'] || entry['Employee']}</strong> | ${formatDate(entry['Work Date'] || entry['Timestamp'])}<br>
+                                <small>${entry['Location Name'] || entry['Location']} | ${entry['Hours Worked'] || entry['Hours']} hours</small>
+                            </div>
+                            <span class="badge badge-${(entry.status || 'pending').toLowerCase()}">${entry.status || 'PENDING'}</span>
+                        </div>
+                    </div>
+                `).join('');
+        }
+
+        function generateReport() {
+            const employee = document.getElementById('reportEmployee').value;
+            const month = document.getElementById('reportMonth').value;
+            
+            if (!employee || !month) {
+                alert('Please select both employee and month');
+                return;
+            }
+            
+            const entries = allEntries.filter(e => 
+                e['Employee Name'] === employee && 
+                (e['Work Date'] || e['Timestamp'] || '').startsWith(month) &&
+                (e.status || 'pending').toLowerCase() === 'approved'
+            );
+            
+            const totalHours = entries.reduce((sum, e) => sum + parseFloat(e['Hours Worked'] || e['Hours'] || 0), 0);
+            
+            document.getElementById('reportResult').innerHTML = `
+                <div class="card" style="background: #f8f9fa; border: 2px solid #3498db;">
+                    <h3 style="text-align: center;">Monthly Report: ${employee}</h3>
+                    <p style="text-align: center; color: #666;">${formatMonth(month)}</p>
+                    <div class="stats-grid">
+                        <div class="stat-box"><div class="stat-value">${entries.length}</div><div class="stat-label">Days Worked</div></div>
+                        <div class="stat-box"><div class="stat-value">${totalHours.toFixed(1)}</div><div class="stat-label">Total Hours</div></div>
+                    </div>
+                    ${entries.map(e => `
+                        <div style="padding: 10px; border-bottom: 1px solid #ddd;">
+                            <strong>${formatDate(e['Work Date'] || e['Timestamp'])}</strong> - ${e['Location Name'] || e['Location']}<br>
+                            ${e['Hours Worked'] || e['Hours']} hours
+                        </div>
+                    `).join('')}
+                    <button onclick="window.print()" class="btn-secondary" style="margin-top: 15px;">🖨️ Print</button>
+                </div>
+            `;
+        }
+
+        // ==========================================
+        // UTILITIES
+        // ==========================================
+        function formatDate(dateStr) {
+            if (!dateStr) return 'Invalid Date';
+            try {
+                return new Date(dateStr).toLocaleDateString('en-US', { 
+                    weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' 
+                });
+            } catch (e) {
+                return dateStr;
+            }
+        }
+        
+        function formatMonth(monthStr) {
+            if (!monthStr) return '';
+            try {
+                const [year, month] = monthStr.split('-');
+                return new Date(year, month - 1).toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+            } catch (e) {
+                return monthStr;
+            }
+        }
+    </script>
+</body>
+</html>
